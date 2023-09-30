@@ -10,8 +10,7 @@ high_res_height = 96
 low_res_width = high_res_width // 4
 low_res_height = high_res_height // 4
 
-highres_transform = T.Compose(
-    [
+highres_transform = T.Compose([
         T.Resize((high_res_width, high_res_height),
                  interpolation=Image.BICUBIC),
         T.ToTensor(),
@@ -19,11 +18,17 @@ highres_transform = T.Compose(
     ]
 )
 
-lowres_transform = T.Compose(
-    [
+lowres_transform = T.Compose([
         T.Resize((low_res_width, low_res_height), interpolation=Image.BICUBIC),
         T.ToTensor(),
-        T.Normalize(mean=[0, 0, 0], std=[1, 1, 1]),
+        T.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
+    ]
+)
+
+both_transforms = T.Compose([
+        T.RandomCrop((high_res_width, high_res_height)),
+        T.RandomHorizontalFlip(p=0.5),
+        T.RandomRotation(degrees=90, interpolation=Image.BICUBIC)
     ]
 )
 
@@ -50,7 +55,9 @@ class RealSRV3(Dataset):
         return len(self.data)
 
     def __getitem__(self, index):
-        image = Image.open(self.data[index])
+        image = both_transforms(
+            Image.open(self.data[index])
+        )
         low_res = lowres_transform(image)
         high_res = highres_transform(image)
 
